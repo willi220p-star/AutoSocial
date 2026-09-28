@@ -12,6 +12,21 @@ schedulers, yt-dlp downloader utilities, and an FFmpeg-based video uniquifier.
 This project is built for a local workstation. It is not a hosted SaaS app and
 does not include user authentication.
 
+## Live dashboard on GitHub Pages
+
+https://willi220p-star.github.io/AutoSocial/
+
+That page is the dashboard itself. Brands, captions, schedules, and queue file
+names are saved in the browser. Login, posting, FFmpeg, and yt-dlp still need
+AutoSocial running on your computer, because GitHub Pages cannot launch a
+browser or process video.
+
+After changing files in `web/`, refresh the Pages copy with:
+
+```bash
+npm run pages:sync
+```
+
 ![AutoSocial Studio dashboard](docs/assets/dashboard-overview.png)
 
 ## Why This Exists
