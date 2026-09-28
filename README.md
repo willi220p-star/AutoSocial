@@ -76,6 +76,29 @@ local control plane.
 Windows is the primary target for the bundled `yt-dlp.exe` workflow, but the
 dashboard and core Node services are ordinary Node.js.
 
+## Run it on your computer
+
+The dashboard has to run on the same computer where you want Chromium to open.
+`http://127.0.0.1:3000` on another machine is not your localhost.
+
+Install Node.js 18 or newer from https://nodejs.org, then:
+
+```bash
+git clone https://github.com/willi220p-star/AutoSocial.git
+cd AutoSocial
+node scripts/run-on-this-computer.js
+```
+
+On Windows you can double-click `START-ON-YOUR-COMPUTER.bat` after the clone.
+
+Leave that window open and open http://127.0.0.1:3000 in your own browser.
+Sign in to TikTok and YouTube from the dashboard. Those logins stay on this
+computer. The sign-in you finished in the cloud Chromium window does not copy
+over.
+
+TikTok has an **Also post to YouTube** switch. It is on by default. After
+TikTok accepts a video, the same file and caption are posted to YouTube.
+
 ## Quick Start
 
 ```bash
@@ -113,6 +136,7 @@ Common settings:
 - `HEADLESS`
 - `POST_DELAY_MS`, `POST_PUBLISH_HOLD_MS`, `FAILURE_HOLD_MS`
 - `AUTO_ADD_SOUND`, `DEFAULT_SOUND_QUERY`
+- `CROSS_POST_TIKTOK_TO_YOUTUBE`
 - `RANDOM_QUEUE_ORDER`
 - `DEFAULT_CAPTION`
 - `UNIQUIFY_LOGO_IMAGE`

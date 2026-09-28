@@ -3,6 +3,9 @@ const path = require("path");
 const { config } = require("./config");
 const { getNextQueuedItem, getCaptionPaths } = require("./queue");
 const { uploadVideo } = require("./tiktok-uploader");
+const { uploadVideo: uploadToYouTube, closeLoginSession: closeYouTubeLogin } = require("./youtube-uploader");
+const { hasSavedPlatformSession } = require("./account-manager");
+const { crossPostAfterTikTok } = require("./cross-post");
 const { ensureDirectories, fileExists, moveWithTimestamp } = require("./fs-utils");
 
 async function moveCaptionsIfExists(captionPaths, targetDir) {
@@ -34,6 +37,24 @@ async function postSingleVideo({ videoPath, caption, source, postedDir, failedDi
   const captionPaths = getCaptionPaths(videoPath);
 
   if (result.ok) {
+    let youtube = null;
+    try {
+      const sessionSaved = accountId
+        ? await hasSavedPlatformSession("youtube", accountId)
+        : false;
+      youtube = await crossPostAfterTikTok({
+        enabled: config.crossPostTikTokToYouTube,
+        sessionSaved,
+        uploadVideo: uploadToYouTube,
+        closeLogin: closeYouTubeLogin,
+        videoPath,
+        caption,
+        accountId,
+      });
+    } catch (error) {
+      youtube = { ok: false, error: error.message };
+    }
+
     const movedVideo = await moveFileSafely(videoPath, posted, "posted video");
     const movedCaption = await moveCaptionsIfExists(captionPaths, posted);
     if (!movedVideo) {
@@ -43,7 +64,7 @@ async function postSingleVideo({ videoPath, caption, source, postedDir, failedDi
         screenshotPath: result.screenshotPath,
       };
     }
-    return { ok: true, movedVideo, movedCaption };
+    return { ok: true, movedVideo, movedCaption, youtube };
   }
 
   const movedVideo = await moveFileSafely(videoPath, failed, "failed video");

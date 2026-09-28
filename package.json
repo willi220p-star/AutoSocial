@@ -15,6 +15,7 @@
     "post": "node src/cli.js post",
     "daemon": "node src/cli.js daemon",
     "dashboard": "node src/dashboard-server.js",
+    "computer": "node scripts/run-on-this-computer.js",
     "pages:sync": "node scripts/sync-github-pages.js",
     "uniquify": "node src/cli.js uniquify",
     "video-info": "node src/cli.js video-info",

@@ -124,6 +124,7 @@ const UI = {
     ttLastRunLabel: document.getElementById("ttLastRunLabel"),
     ttInstantPostToggle: document.getElementById("ttInstantPostToggle"),
     ttAutoAddSoundToggle: document.getElementById("ttAutoAddSoundToggle"),
+    ttCrossPostYouTubeToggle: document.getElementById("ttCrossPostYouTubeToggle"),
     ttSoundQueryInput: document.getElementById("ttSoundQueryInput"),
     ttSoundQuerySaveBtn: document.getElementById("ttSoundQuerySaveBtn"),
     ttRandomQueueToggle: document.getElementById("ttRandomQueueToggle"),
@@ -255,6 +256,9 @@ const UI = {
     if (this.els.ttRunBtn) {
       this.els.ttRunBtn.addEventListener("click", () => this.handleAction("/api/run-once"));
     }
+    this.bindQueueUpload("tiktok", "ttUploadFile", "ttUploadCaption", "ttUploadBtn");
+    this.bindQueueUpload("instagram", "igUploadFile", "igUploadCaption", "igUploadBtn");
+    this.bindQueueUpload("youtube", "ytUploadFile", "ytUploadCaption", "ytUploadBtn");
     if (this.els.ttUpdateScheduleBtn) {
       this.els.ttUpdateScheduleBtn.addEventListener("click", () =>
         this.handleUpdateSchedule(true)
@@ -289,6 +293,24 @@ const UI = {
       this.els.ttInstantPostToggle.addEventListener("change", (e) =>
         this.handleInstantPostToggle("tiktok", e.target.checked)
       );
+    }
+
+    if (this.els.ttCrossPostYouTubeToggle) {
+      this.els.ttCrossPostYouTubeToggle.addEventListener("change", async (e) => {
+        try {
+          const result = await API.post("/api/settings/save", {
+            payload: { CROSS_POST_TIKTOK_TO_YOUTUBE: e.target.checked },
+          });
+          if (result?.ok === false && result?.error) {
+            alert(result.error);
+            e.target.checked = !e.target.checked;
+          }
+          this.refresh();
+        } catch (err) {
+          alert(`Failed to save YouTube cross-post setting: ${err.message}`);
+          e.target.checked = !e.target.checked;
+        }
+      });
     }
 
     if (this.els.ttAutoAddSoundToggle) {
@@ -727,6 +749,54 @@ const UI = {
       alert(`Could not open folder: ${err.message}`);
     } finally {
       button.disabled = false;
+    }
+  },
+
+  bindQueueUpload(platform, fileId, captionId, buttonId) {
+    const button = document.getElementById(buttonId);
+    const fileInput = document.getElementById(fileId);
+    const captionInput = document.getElementById(captionId);
+    if (!button || !fileInput) return;
+    button.addEventListener("click", () => this.handleQueueUpload(platform, fileInput, captionInput, button));
+  },
+
+  async handleQueueUpload(platform, fileInput, captionInput, button) {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) {
+      alert("Choose a video file first.");
+      return;
+    }
+    const idle = button.innerHTML;
+    button.disabled = true;
+    button.textContent = "Uploading...";
+    try {
+      const params = new URLSearchParams({
+        platform,
+        name: file.name,
+      });
+      if (captionInput && captionInput.value.trim()) {
+        params.set("caption", captionInput.value.trim());
+      }
+      const res = await fetch(`/api/queue/upload?${params.toString()}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/octet-stream" },
+        body: file,
+      });
+      const result = await res.json().catch(() => null);
+      if (!res.ok || result?.ok === false) {
+        throw new Error(result?.error || `Upload failed (${res.status})`);
+      }
+      fileInput.value = "";
+      if (captionInput) captionInput.value = "";
+      button.textContent = "Added";
+      await this.refresh();
+    } catch (err) {
+      alert(`Could not add video: ${err.message}`);
+    } finally {
+      setTimeout(() => {
+        button.disabled = false;
+        button.innerHTML = idle;
+      }, 1200);
     }
   },
 
@@ -1534,6 +1604,10 @@ const UI = {
 
     if (this.els.ttAutoAddSoundToggle && document.activeElement !== this.els.ttAutoAddSoundToggle) {
       this.els.ttAutoAddSoundToggle.checked = Boolean(data.autoAddSound);
+    }
+
+    if (this.els.ttCrossPostYouTubeToggle && document.activeElement !== this.els.ttCrossPostYouTubeToggle) {
+      this.els.ttCrossPostYouTubeToggle.checked = data.crossPostTikTokToYouTube !== false;
     }
 
     if (this.els.ttSoundQueryInput && document.activeElement !== this.els.ttSoundQueryInput) {

@@ -83,6 +83,7 @@ async function getActiveDaemons() {
 
 const SETTINGS_ENV_KEYS = new Set([
   "AUTO_ADD_SOUND",
+  "CROSS_POST_TIKTOK_TO_YOUTUBE",
   "DEFAULT_CAPTION",
   "DEFAULT_SOUND_QUERY",
   "RANDOM_QUEUE_ORDER",
@@ -99,6 +100,8 @@ function serializeEnvValue(value) {
 function applyRuntimeSetting(envKey, value) {
   if (envKey === "AUTO_ADD_SOUND") {
     config.autoAddSound = String(value).toLowerCase() === "true";
+  } else if (envKey === "CROSS_POST_TIKTOK_TO_YOUTUBE") {
+    config.crossPostTikTokToYouTube = String(value).toLowerCase() === "true";
   } else if (envKey === "DEFAULT_CAPTION") {
     config.defaultCaption = String(value ?? "");
   } else if (envKey === "DEFAULT_SOUND_QUERY") {

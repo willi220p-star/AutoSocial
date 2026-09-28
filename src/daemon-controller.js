@@ -184,6 +184,16 @@ class DaemonController {
         this.log(result.reason);
       } else if (result.ok) {
         this.log(`Posted successfully: ${result.movedVideo}`);
+        if (result.youtube?.ok) {
+          this.log("Also posted that video to YouTube.");
+        } else if (result.youtube && result.youtube.skipped) {
+          this.log(result.youtube.reason);
+        } else if (result.youtube && result.youtube.ok === false) {
+          this.log(
+            `TikTok posted, but YouTube did not: ${result.youtube.error || "unknown error"}`,
+            "error"
+          );
+        }
       } else {
         this.log(`Post failed: ${result.error}`, "error");
         if (result.screenshotPath) {
@@ -372,6 +382,7 @@ class DaemonController {
       instantPost: this.instantPost,
       timezone: config.timezone,
       autoAddSound: config.autoAddSound,
+      crossPostTikTokToYouTube: config.crossPostTikTokToYouTube,
       defaultCaption: config.defaultCaption,
       defaultSoundQuery: config.defaultSoundQuery,
       randomQueueOrder: config.randomQueueOrder,

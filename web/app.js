@@ -124,6 +124,7 @@ const UI = {
     ttLastRunLabel: document.getElementById("ttLastRunLabel"),
     ttInstantPostToggle: document.getElementById("ttInstantPostToggle"),
     ttAutoAddSoundToggle: document.getElementById("ttAutoAddSoundToggle"),
+    ttCrossPostYouTubeToggle: document.getElementById("ttCrossPostYouTubeToggle"),
     ttSoundQueryInput: document.getElementById("ttSoundQueryInput"),
     ttSoundQuerySaveBtn: document.getElementById("ttSoundQuerySaveBtn"),
     ttRandomQueueToggle: document.getElementById("ttRandomQueueToggle"),
@@ -292,6 +293,24 @@ const UI = {
       this.els.ttInstantPostToggle.addEventListener("change", (e) =>
         this.handleInstantPostToggle("tiktok", e.target.checked)
       );
+    }
+
+    if (this.els.ttCrossPostYouTubeToggle) {
+      this.els.ttCrossPostYouTubeToggle.addEventListener("change", async (e) => {
+        try {
+          const result = await API.post("/api/settings/save", {
+            payload: { CROSS_POST_TIKTOK_TO_YOUTUBE: e.target.checked },
+          });
+          if (result?.ok === false && result?.error) {
+            alert(result.error);
+            e.target.checked = !e.target.checked;
+          }
+          this.refresh();
+        } catch (err) {
+          alert(`Failed to save YouTube cross-post setting: ${err.message}`);
+          e.target.checked = !e.target.checked;
+        }
+      });
     }
 
     if (this.els.ttAutoAddSoundToggle) {
@@ -1585,6 +1604,10 @@ const UI = {
 
     if (this.els.ttAutoAddSoundToggle && document.activeElement !== this.els.ttAutoAddSoundToggle) {
       this.els.ttAutoAddSoundToggle.checked = Boolean(data.autoAddSound);
+    }
+
+    if (this.els.ttCrossPostYouTubeToggle && document.activeElement !== this.els.ttCrossPostYouTubeToggle) {
+      this.els.ttCrossPostYouTubeToggle.checked = data.crossPostTikTokToYouTube !== false;
     }
 
     if (this.els.ttSoundQueryInput && document.activeElement !== this.els.ttSoundQueryInput) {

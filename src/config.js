@@ -80,6 +80,7 @@ const config = {
   postPublishHoldMs: Number(process.env.POST_PUBLISH_HOLD_MS || 25000),
   failureHoldMs: Number(process.env.FAILURE_HOLD_MS || 8000),
   autoAddSound: getBoolean(process.env.AUTO_ADD_SOUND, false),
+  crossPostTikTokToYouTube: getBoolean(process.env.CROSS_POST_TIKTOK_TO_YOUTUBE, true),
   randomQueueOrder: getBoolean(process.env.RANDOM_QUEUE_ORDER, false),
   defaultSoundQuery: process.env.DEFAULT_SOUND_QUERY || "",
   defaultCaption: process.env.DEFAULT_CAPTION || "",

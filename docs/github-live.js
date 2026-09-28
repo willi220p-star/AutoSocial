@@ -23,6 +23,7 @@
   const VIDEO_EXTS = [".mp4", ".mov", ".webm", ".avi", ".mkv"];
   const SETTINGS_KEYS = new Set([
     "AUTO_ADD_SOUND",
+    "CROSS_POST_TIKTOK_TO_YOUTUBE",
     "DEFAULT_CAPTION",
     "DEFAULT_SOUND_QUERY",
     "RANDOM_QUEUE_ORDER",
@@ -75,6 +76,7 @@
       activeAccountId: "default",
       settings: {
         AUTO_ADD_SOUND: "false",
+        CROSS_POST_TIKTOK_TO_YOUTUBE: "true",
         DEFAULT_CAPTION: "",
         DEFAULT_SOUND_QUERY: "",
         RANDOM_QUEUE_ORDER: "false",
@@ -250,6 +252,7 @@
       instantPost: Boolean(daemon.instantPost),
       timezone: timezoneName(),
       autoAddSound: String(settings.AUTO_ADD_SOUND).toLowerCase() === "true",
+      crossPostTikTokToYouTube: String(settings.CROSS_POST_TIKTOK_TO_YOUTUBE).toLowerCase() !== "false",
       defaultCaption: settings.DEFAULT_CAPTION || "",
       defaultSoundQuery: settings.DEFAULT_SOUND_QUERY || "",
       randomQueueOrder: String(settings.RANDOM_QUEUE_ORDER).toLowerCase() === "true",
