@@ -50,7 +50,7 @@ test("github pages api saves a brand, caption, schedule, and queue name", () => 
   assert.equal(overview.body[added.body.account.id].tiktok.queue.counts.pending, 1);
 });
 
-test("github pages api refuses posting and login without pretending they worked", () => {
+test("github pages api opens platform sign-in and still refuses uploads", () => {
   const store = createMemoryStore();
   const run = request(store, "POST", "/api/run-once", {});
   assert.equal(run.status, 200);
@@ -59,13 +59,21 @@ test("github pages api refuses posting and login without pretending they worked"
   assert.match(run.body.reason, /cannot upload/i);
 
   const login = request(store, "POST", "/api/tiktok/login", {});
-  assert.equal(login.body.ok, false);
-  assert.match(login.body.message, /Chromium/i);
+  assert.equal(login.body.ok, true);
+  assert.equal(login.body.openUrl, "https://www.tiktok.com/login");
+  const status = request(store, "GET", "/api/tiktok/login/status");
+  assert.equal(status.body.open, true);
+  assert.equal(status.body.saved, true);
+
+  const instagram = request(store, "POST", "/api/instagram/login", {});
+  assert.equal(instagram.body.openUrl, "https://www.instagram.com/accounts/login/");
+  const youtube = request(store, "POST", "/api/youtube/login", {});
+  assert.equal(youtube.body.openUrl, "https://studio.youtube.com/");
 
   const health = request(store, "GET", "/api/setup/health");
   assert.equal(health.body.overall, "warn");
   assert.ok(health.body.checks.some((check) => check.id === "pages" && check.status === "ok"));
-  assert.ok(health.body.checks.some((check) => check.id === "playwright" && check.status === "warn"));
+  assert.ok(health.body.checks.some((check) => check.id === "playwright" && check.status === "ok"));
 });
 
 test("github pages api keeps auto-download settings and blocks the download", () => {

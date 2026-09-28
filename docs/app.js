@@ -1141,8 +1141,29 @@ const UI = {
       instagram: "Instagram",
       youtube: "YouTube",
     };
+    const hosted = Boolean(window.__autosocialGithubLive);
+    const popup = hosted ? window.open("about:blank", "_blank") : null;
+    if (popup) {
+      try {
+        popup.opener = null;
+      } catch (err) {
+        // The sign-in tab can still be navigated from this page.
+      }
+    }
     try {
       const result = await API.post(endpointMap[platform]);
+      if (result?.openUrl) {
+        if (popup) {
+          popup.location.href = result.openUrl;
+          window.__autosocialLoginPopups = window.__autosocialLoginPopups || {};
+          window.__autosocialLoginPopups[platform] = popup;
+        } else if (hosted) {
+          alert(`Popups are blocked. Open this ${labelMap[platform]} sign-in page: ${result.openUrl}`);
+        }
+        await this.refresh();
+        return;
+      }
+      if (popup && !popup.closed) popup.close();
       if (result?.hosted || result?.ok === false) {
         alert(result.message || result.error || result.reason || `${labelMap[platform]} login is unavailable here.`);
       } else if (result.alreadyOpen) {
@@ -1152,6 +1173,7 @@ const UI = {
       }
       await this.refresh();
     } catch (err) {
+      if (popup && !popup.closed) popup.close();
       alert(`${labelMap[platform]} login failed: ${err.message}`);
     }
   },
@@ -1167,11 +1189,15 @@ const UI = {
       instagram: "Instagram",
       youtube: "YouTube",
     };
+    const popup = window.__autosocialLoginPopups?.[platform];
+    if (popup && !popup.closed) {
+      popup.close();
+    }
     try {
       const result = await API.post(endpointMap[platform]);
-      if (result?.hosted || result?.ok === false) {
+      if (result?.hosted && result?.ok === false) {
         alert(result.message || result.error || result.reason || `Could not close ${labelMap[platform]} login.`);
-      } else if (!result.alreadyClosed) {
+      } else if (!result.alreadyClosed && !window.__autosocialGithubLive) {
         alert(`${labelMap[platform]} login browser closed.`);
       }
       await this.refresh();

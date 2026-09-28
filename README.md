@@ -17,9 +17,9 @@ does not include user authentication.
 https://willi220p-star.github.io/AutoSocial/
 
 That page is the dashboard itself. Brands, captions, schedules, and queue file
-names are saved in the browser. Login, posting, FFmpeg, and yt-dlp still need
-AutoSocial running on your computer, because GitHub Pages cannot launch a
-browser or process video.
+names are saved in the browser. Login opens the TikTok, Instagram, or YouTube
+sign-in page in a new tab. Posting, FFmpeg, and yt-dlp still need AutoSocial
+running on your computer.
 
 After changing files in `web/`, refresh the Pages copy with:
 

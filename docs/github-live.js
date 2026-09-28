@@ -29,8 +29,11 @@
   ]);
   const POST_LIMIT =
     "GitHub Pages cannot upload videos. The queue and schedule stay saved in this browser. Run AutoSocial on your computer to post.";
-  const LOGIN_LIMIT =
-    "GitHub Pages cannot open Chromium. Log in from AutoSocial on your computer. This page only saves brands, schedules, captions, and queue names in your browser.";
+  const SIGN_IN_URLS = {
+    tiktok: "https://www.tiktok.com/login",
+    instagram: "https://www.instagram.com/accounts/login/",
+    youtube: "https://studio.youtube.com/",
+  };
   const FFMPEG_LIMIT =
     "GitHub Pages cannot run FFmpeg. Names listed here are saved in this browser. Process the videos in AutoSocial on your computer.";
   const DOWNLOAD_LIMIT =
@@ -78,6 +81,7 @@
       },
       daemons: {},
       queues: {},
+      sessions: {},
       uniquifier: {
         inputDir: "browser://uniquifier/input",
         outputDir: "browser://uniquifier/output",
@@ -176,6 +180,7 @@
     }
     raw.daemons = raw.daemons || {};
     raw.queues = raw.queues || {};
+    raw.sessions = raw.sessions || {};
     raw.settings = Object.assign(defaultState().settings, raw.settings || {});
     raw.uniquifier = Object.assign(defaultState().uniquifier, raw.uniquifier || {});
     raw.autodownload = Object.assign(defaultState().autodownload, raw.autodownload || {});
@@ -362,10 +367,10 @@
       },
       {
         id: "playwright",
-        label: "Playwright Chromium",
-        status: "warn",
-        detail: "GitHub cannot launch a login browser.",
-        action: "Run AutoSocial on your computer and use Accounts to log in.",
+        label: "Platform sign-in",
+        status: "ok",
+        detail: "Login opens TikTok, Instagram, or YouTube in a new browser tab.",
+        action: "",
       },
       {
         id: "ffmpeg",
@@ -436,13 +441,19 @@
       }
     );
 
-    const sessions = PLATFORMS.map((platform) => ({
-      platform,
-      label: PLATFORM_LABELS[platform],
-      saved: false,
-      profileDir: `browser://profiles/${active.id}/${platform}`,
-      action: "Login sessions cannot be stored on GitHub Pages.",
-    }));
+    const sessions = PLATFORMS.map((platform) => {
+      const record = state.sessions?.[active.id]?.[platform] || {};
+      const signedIn = Boolean(record.open);
+      return {
+        platform,
+        label: PLATFORM_LABELS[platform],
+        saved: signedIn,
+        profileDir: SIGN_IN_URLS[platform],
+        action: signedIn
+          ? "Sign-in page is open in this browser."
+          : "Use Accounts and choose Login Session.",
+      };
+    });
 
     const counts = checks.reduce(
       (acc, check) => {
@@ -464,7 +475,7 @@
       nextSteps: [
         "Add a brand, caption, and schedule here. They stay in this browser.",
         "Add video file names on TikTok, Instagram, or YouTube so the queue is ready to copy.",
-        "Install AutoSocial on your computer to log in, process videos, and post.",
+        "Use Accounts and Login Session to open TikTok, Instagram, or YouTube and sign in.",
       ],
     };
   }
@@ -619,25 +630,43 @@
     if (
       route === "POST /api/tiktok/login" ||
       route === "POST /api/instagram/login" ||
-      route === "POST /api/youtube/login"
-    ) {
-      return blocked(LOGIN_LIMIT);
-    }
-
-    if (
+      route === "POST /api/youtube/login" ||
       route === "GET /api/tiktok/login/status" ||
       route === "GET /api/instagram/login/status" ||
-      route === "GET /api/youtube/login/status"
-    ) {
-      return ok({ open: false, saved: false, hosted: true });
-    }
-
-    if (
+      route === "GET /api/youtube/login/status" ||
       route === "POST /api/tiktok/login/close" ||
       route === "POST /api/instagram/login/close" ||
       route === "POST /api/youtube/login/close"
     ) {
-      return blocked("No login browser is open. GitHub Pages cannot start Chromium.");
+      const platform = path.split("/")[2];
+      const openUrl = SIGN_IN_URLS[platform];
+      if (!state.sessions[account.id]) state.sessions[account.id] = {};
+      const session = state.sessions[account.id][platform] || { open: false };
+      state.sessions[account.id][platform] = session;
+
+      if (route.startsWith("GET ")) {
+        return ok({ open: Boolean(session.open), saved: Boolean(session.open), hosted: true, openUrl });
+      }
+      if (route.endsWith("/close")) {
+        const alreadyClosed = !session.open;
+        session.open = false;
+        store.save(state);
+        return ok({ ok: true, alreadyClosed, hosted: true });
+      }
+      const alreadyOpen = Boolean(session.open);
+      session.open = true;
+      pushLog(
+        ensureDaemon(state, account.id, platform),
+        `${PLATFORM_LABELS[platform]} sign-in opened at ${openUrl}`
+      );
+      store.save(state);
+      return ok({
+        ok: true,
+        alreadyOpen,
+        hosted: true,
+        openUrl,
+        message: `${PLATFORM_LABELS[platform]} sign-in is ready.`,
+      });
     }
 
     if (route === "GET /api/overview") {
@@ -832,7 +861,7 @@
         banner.id = "githubLiveBanner";
         banner.className = "github-live-banner";
         banner.textContent =
-          "This GitHub Pages copy saves brands, captions, schedules, and queue names in this browser. Login, posting, FFmpeg, and downloads run only in AutoSocial on your computer.";
+          "Login opens TikTok, Instagram, or YouTube in a new tab so you can sign in there. Brands, captions, schedules, and queue names stay in this browser.";
         main.insertBefore(banner, main.firstChild);
       }
 
