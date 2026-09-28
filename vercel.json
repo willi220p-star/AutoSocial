@@ -1,0 +1,8 @@
+{
+  "framework": "express",
+  "functions": {
+    "server.js": {
+      "includeFiles": "web/**"
+    }
+  }
+}

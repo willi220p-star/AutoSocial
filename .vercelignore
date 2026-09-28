@@ -1,0 +1,11 @@
+node_modules
+.git
+.env
+.profiles
+.scheduler-state
+queue
+*.mp4
+*.mov
+*.webm
+*.avi
+*.mkv

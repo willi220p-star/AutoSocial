@@ -36,11 +36,11 @@ class AutoDownloadController {
         this.logs = [];
         this._timer = null;
 
-        this.baseDir = path.resolve(config.projectRoot, "autodownload");
-        this.ytDlp = path.join(this.baseDir, "yt-dlp.exe");
+        this.baseDir = path.resolve(config.dataRoot, "autodownload");
+        this.ytDlp = path.resolve(config.projectRoot, "autodownload", "yt-dlp.exe");
         this.downloadsDir = path.join(this.baseDir, "downloads");
         this.archivePath = path.join(this.baseDir, "archive.txt");
-        this.statePath = path.resolve(config.projectRoot, "autodownload-state.json");
+        this.statePath = path.resolve(config.dataRoot, "autodownload-state.json");
 
         this._loadState();
     }

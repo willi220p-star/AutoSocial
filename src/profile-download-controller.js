@@ -25,8 +25,8 @@ class ProfileDownloadController {
         this.running = false;
         this.logs = [];
 
-        this.baseDir = path.resolve(config.projectRoot, "autodownload");
-        this.ytDlp = path.join(this.baseDir, "yt-dlp.exe");
+        this.baseDir = path.resolve(config.dataRoot, "autodownload");
+        this.ytDlp = path.resolve(config.projectRoot, "autodownload", "yt-dlp.exe");
         this.downloadsDir = path.join(this.baseDir, "profile_downloads");
 
         ensureDir(this.downloadsDir);

@@ -111,28 +111,44 @@ function ensureDashboardBindAllowed() {
   );
 }
 
-async function createServer() {
-  // Run migration from old flat queue layout to per-profile structure
+let readyPromise = null;
+
+async function prepareRuntime() {
   await migrateQueueIfNeeded();
 
-  // Ensure dirs for all existing accounts
   const allAccounts = await getAllAccounts();
   for (const acct of allAccounts) {
     await ensureAccountDirs(acct.id);
   }
 
-  // Ensure uniquifier dirs
   await ensureDirectories([
     config.uniquifyInputDir,
     config.uniquifyOutputDir,
   ]);
 
-  // Pre-initialize daemons for all existing accounts
   for (const acct of allAccounts) {
     await getDaemons(acct.id);
   }
+}
 
+function ensureReady() {
+  if (!readyPromise) {
+    readyPromise = prepareRuntime();
+  }
+  return readyPromise;
+}
+
+function createServer() {
   const app = express();
+  app.use(async (req, res, next) => {
+    try {
+      await ensureReady();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  });
+
   const uniquifier = new UniquifierController();
   const autoDownloader = new AutoDownloadController();
   const profileDownloader = new ProfileDownloadController();
@@ -218,7 +234,7 @@ async function createServer() {
         return res.status(400).json({ ok: false, error: "Invalid payload." });
       }
 
-      const envPath = path.resolve(config.projectRoot, ".env");
+      const envPath = path.resolve(config.dataRoot, ".env");
       let envContent = "";
       try {
         envContent = await fs.readFile(envPath, "utf-8");
@@ -636,15 +652,25 @@ async function createServer() {
     res.status(500).json({ ok: false, error: error.message });
   });
 
-  ensureDashboardBindAllowed();
-  app.listen(config.dashboardPort, config.dashboardHost, () => {
-    console.log(
-      `Dashboard running at http://${config.dashboardHost}:${config.dashboardPort}`
-    );
-  });
+  return app;
 }
 
-createServer().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+const app = createServer();
+
+if (require.main === module) {
+  ensureDashboardBindAllowed();
+  ensureReady()
+    .then(() => {
+      app.listen(config.dashboardPort, config.dashboardHost, () => {
+        console.log(
+          `Dashboard running at http://${config.dashboardHost}:${config.dashboardPort}`
+        );
+      });
+    })
+    .catch((error) => {
+      console.error(error);
+      process.exit(1);
+    });
+}
+
+module.exports = app;

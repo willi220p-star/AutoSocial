@@ -2,7 +2,7 @@ const fs = require("fs/promises");
 const path = require("path");
 const { config } = require("./config");
 
-const STATE_FILE = path.resolve(config.projectRoot, "accounts-state.json");
+const STATE_FILE = path.resolve(config.dataRoot, "accounts-state.json");
 const DEFAULT_ACCOUNT = { id: "default", name: "Default" };
 const LEGACY_PROFILE_DIRS = {
   tiktok: config.profileDir,
@@ -84,7 +84,7 @@ const PLATFORMS = ["tiktok", "instagram", "youtube"];
 const SUBDIRS = ["pending", "posted", "failed"];
 
 function getAccountQueueDirs(accountId) {
-  const base = path.resolve(config.projectRoot, "queue", accountId);
+  const base = path.resolve(config.dataRoot, "queue", accountId);
   const dirs = {};
   for (const platform of PLATFORMS) {
     dirs[platform] = {};
@@ -104,7 +104,7 @@ async function ensureAccountDirs(accountId) {
     }
   }
   // Also ensure browser profile dirs
-  const profileBase = path.resolve(config.projectRoot, ".profiles", accountId);
+  const profileBase = path.resolve(config.dataRoot, ".profiles", accountId);
   for (const platform of PLATFORMS) {
     allPaths.push(path.resolve(profileBase, platform));
   }
@@ -167,7 +167,7 @@ async function getPlatformProfileDir(platform, accountId) {
       // Fall through to new path
     }
   }
-  return path.resolve(config.projectRoot, ".profiles", acctId, platform);
+  return path.resolve(config.dataRoot, ".profiles", acctId, platform);
 }
 
 async function hasSavedPlatformSession(platform, accountId) {

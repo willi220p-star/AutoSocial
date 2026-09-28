@@ -11,52 +11,64 @@ function getBoolean(value, defaultValue = false) {
 }
 
 const projectRoot = path.resolve(__dirname, "..");
+const dataRoot = path.resolve(
+  process.env.DATA_ROOT || (process.env.VERCEL ? "/tmp/autosocial-data" : projectRoot)
+);
+
+function resolveDataPath(value, fallback) {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) {
+    return path.resolve(dataRoot, fallback);
+  }
+  return path.isAbsolute(trimmed) ? trimmed : path.resolve(dataRoot, trimmed);
+}
 
 function resolveOptionalProjectPath(value) {
   const trimmed = String(value || "").trim();
   if (!trimmed) {
     return "";
   }
-  return path.resolve(projectRoot, trimmed);
+  return path.isAbsolute(trimmed) ? trimmed : path.resolve(dataRoot, trimmed);
 }
 
 const config = {
   projectRoot,
-  queueDir: path.resolve(projectRoot, process.env.QUEUE_DIR || "queue/default/tiktok/pending"),
-  postedDir: path.resolve(projectRoot, process.env.POSTED_DIR || "queue/default/tiktok/posted"),
-  failedDir: path.resolve(projectRoot, process.env.FAILED_DIR || "queue/default/tiktok/failed"),
-  profileDir: path.resolve(projectRoot, process.env.BROWSER_PROFILE_DIR || ".profile"),
-  instagramQueueDir: path.resolve(
-    projectRoot,
-    process.env.INSTAGRAM_QUEUE_DIR || "queue/default/instagram/pending"
+  dataRoot,
+  queueDir: resolveDataPath(process.env.QUEUE_DIR, "queue/default/tiktok/pending"),
+  postedDir: resolveDataPath(process.env.POSTED_DIR, "queue/default/tiktok/posted"),
+  failedDir: resolveDataPath(process.env.FAILED_DIR, "queue/default/tiktok/failed"),
+  profileDir: resolveDataPath(process.env.BROWSER_PROFILE_DIR, ".profile"),
+  instagramQueueDir: resolveDataPath(
+    process.env.INSTAGRAM_QUEUE_DIR,
+    "queue/default/instagram/pending"
   ),
-  instagramPostedDir: path.resolve(
-    projectRoot,
-    process.env.INSTAGRAM_POSTED_DIR || "queue/default/instagram/posted"
+  instagramPostedDir: resolveDataPath(
+    process.env.INSTAGRAM_POSTED_DIR,
+    "queue/default/instagram/posted"
   ),
-  instagramFailedDir: path.resolve(
-    projectRoot,
-    process.env.INSTAGRAM_FAILED_DIR || "queue/default/instagram/failed"
+  instagramFailedDir: resolveDataPath(
+    process.env.INSTAGRAM_FAILED_DIR,
+    "queue/default/instagram/failed"
   ),
-  instagramProfileDir: path.resolve(
-    projectRoot,
-    process.env.INSTAGRAM_PROFILE_DIR || ".profile-instagram"
+  instagramProfileDir: resolveDataPath(
+    process.env.INSTAGRAM_PROFILE_DIR,
+    ".profile-instagram"
   ),
-  youtubeQueueDir: path.resolve(
-    projectRoot,
-    process.env.YOUTUBE_QUEUE_DIR || "queue/default/youtube/pending"
+  youtubeQueueDir: resolveDataPath(
+    process.env.YOUTUBE_QUEUE_DIR,
+    "queue/default/youtube/pending"
   ),
-  youtubePostedDir: path.resolve(
-    projectRoot,
-    process.env.YOUTUBE_POSTED_DIR || "queue/default/youtube/posted"
+  youtubePostedDir: resolveDataPath(
+    process.env.YOUTUBE_POSTED_DIR,
+    "queue/default/youtube/posted"
   ),
-  youtubeFailedDir: path.resolve(
-    projectRoot,
-    process.env.YOUTUBE_FAILED_DIR || "queue/default/youtube/failed"
+  youtubeFailedDir: resolveDataPath(
+    process.env.YOUTUBE_FAILED_DIR,
+    "queue/default/youtube/failed"
   ),
-  youtubeProfileDir: path.resolve(
-    projectRoot,
-    process.env.YOUTUBE_PROFILE_DIR || ".profile-youtube"
+  youtubeProfileDir: resolveDataPath(
+    process.env.YOUTUBE_PROFILE_DIR,
+    ".profile-youtube"
   ),
   cronExpression: process.env.CRON_EXPRESSION || "0 */2 * * *",
   instagramCronExpression: process.env.INSTAGRAM_CRON_EXPRESSION || "0 */2 * * *",
@@ -80,14 +92,8 @@ const config = {
   dashboardHost: process.env.DASHBOARD_HOST || "127.0.0.1",
   dashboardPort: Number(process.env.DASHBOARD_PORT || 3000),
   dashboardAllowRemote: getBoolean(process.env.DASHBOARD_ALLOW_REMOTE, false),
-  uniquifyInputDir: path.resolve(
-    projectRoot,
-    process.env.UNIQUIFY_INPUT_DIR || "queue/uniquify-input"
-  ),
-  uniquifyOutputDir: path.resolve(
-    projectRoot,
-    process.env.UNIQUIFY_OUTPUT_DIR || "queue/uniquify-output"
-  ),
+  uniquifyInputDir: resolveDataPath(process.env.UNIQUIFY_INPUT_DIR, "queue/uniquify-input"),
+  uniquifyOutputDir: resolveDataPath(process.env.UNIQUIFY_OUTPUT_DIR, "queue/uniquify-output"),
   uniquifyLogoImage: resolveOptionalProjectPath(process.env.UNIQUIFY_LOGO_IMAGE),
   uniquifyIntroSeconds: Number(process.env.UNIQUIFY_INTRO_SECONDS || 1),
   uniquifyEndHoldSeconds: Number(process.env.UNIQUIFY_END_HOLD_SECONDS || 0.4),

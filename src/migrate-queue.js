@@ -3,7 +3,7 @@ const path = require("path");
 const { config } = require("./config");
 const { ensureAccountDirs } = require("./account-manager");
 
-const QUEUE_ROOT = path.resolve(config.projectRoot, "queue");
+const QUEUE_ROOT = path.resolve(config.dataRoot, "queue");
 const VIDEO_EXTS = new Set([".mp4", ".mov", ".webm", ".avi", ".mkv"]);
 
 /**

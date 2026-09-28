@@ -15,7 +15,7 @@ const { getAccountQueueDirs, ensureAccountDirs } = require("./account-manager");
 const registry = new Map();
 
 function getStateDir(accountId) {
-    return path.resolve(config.projectRoot, ".scheduler-state", accountId);
+    return path.resolve(config.dataRoot, ".scheduler-state", accountId);
 }
 
 /**
