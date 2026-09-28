@@ -1,6 +1,7 @@
 const path = require("path");
 const os = require("os");
 const fs = require("fs/promises");
+const fsSync = require("fs");
 const { spawn } = require("child_process");
 const express = require("express");
 const { config } = require("./config");
@@ -34,7 +35,19 @@ const {
   getActiveAccount,
   getAllAccounts,
   ensureAccountDirs,
+  getAccountQueueDirs,
 } = require("./account-manager");
+
+const VIDEO_UPLOAD_EXTS = new Set([".mp4", ".mov", ".webm", ".avi", ".mkv"]);
+
+function safeVideoFileName(raw) {
+  const base = path.basename(String(raw || "")).replace(/[^\w.\- ()]/g, "").trim();
+  const ext = path.extname(base).toLowerCase();
+  if (!base || base.length > 120 || !VIDEO_UPLOAD_EXTS.has(ext)) {
+    return "";
+  }
+  return base;
+}
 
 function openFolder(folderPath) {
   return new Promise((resolve, reject) => {
@@ -155,6 +168,61 @@ function createServer() {
 
   app.use(express.json());
   app.use(createDashboardRequestGuard());
+  app.post("/api/queue/upload", async (req, res) => {
+    const platform = String(req.query.platform || "");
+    if (!["tiktok", "instagram", "youtube"].includes(platform)) {
+      res.status(400).json({ ok: false, error: "Choose TikTok, Instagram, or YouTube." });
+      return;
+    }
+
+    const fileName = safeVideoFileName(req.query.name || req.get("x-filename"));
+    if (!fileName) {
+      res.status(400).json({ ok: false, error: "Use an mp4, mov, webm, avi, or mkv file." });
+      return;
+    }
+
+    const active = await getActiveAccount();
+    const pendingDir = getAccountQueueDirs(active.id)[platform].pending;
+    await fs.mkdir(pendingDir, { recursive: true });
+    const destPath = path.join(pendingDir, fileName);
+    const caption = String(req.query.caption || "").slice(0, 2000);
+    const maxBytes = 250 * 1024 * 1024;
+    let received = 0;
+
+    try {
+      await new Promise((resolve, reject) => {
+        const output = fsSync.createWriteStream(destPath);
+        const fail = (error) => {
+          output.destroy();
+          reject(error);
+        };
+        req.on("data", (chunk) => {
+          received += chunk.length;
+          if (received > maxBytes) {
+            req.destroy();
+            fail(new Error("Video is larger than 250 MB."));
+          }
+        });
+        req.on("error", fail);
+        output.on("error", fail);
+        output.on("finish", resolve);
+        req.pipe(output);
+      });
+      if (!received) {
+        throw new Error("The video file was empty.");
+      }
+      if (caption.trim()) {
+        const sidecar = `${fileName.slice(0, -path.extname(fileName).length)}.txt`;
+        await fs.writeFile(path.join(pendingDir, sidecar), caption, "utf8");
+      }
+      res.json({ ok: true, name: fileName });
+    } catch (error) {
+      await fs.unlink(destPath).catch(() => {});
+      if (!res.headersSent) {
+        res.status(400).json({ ok: false, error: error.message });
+      }
+    }
+  });
   app.use(express.static(path.join(__dirname, "..", "web")));
 
   // TikTok endpoints (profile-aware)
